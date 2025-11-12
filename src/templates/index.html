@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Recipe Tracker</title>
+<style>
+  body {
+    font-family: Arial;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1rem;
+  }
+  .step.done {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+  .recipe {
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+  }
+  .small {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 10px 0;
+  }
+  textarea {
+    width: 100%;
+    min-height: 80px;
+  }
+  .recipe input[type="file"] {
+    margin-top: 5px;
+  }
+  .recipe button {
+    margin-right: 5px;
+    margin-top: 5px;
+  }
+  /* Modal styling */
+  #editModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    justify-content: center; align-items: center;
+  }
+  #editModalContent {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+  }
+  #editModalContent textarea {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Recipe Tracker</h1>
+<section id="recipes"></section>
+
+<h2>Add Recipe</h2>
+<form id="addForm">
+  <input id="title" placeholder="Title" required />
+  <br/><br/>
+  <textarea id="ingredients" placeholder='Ingredients (one per line)'></textarea>
+  <br/><br/>
+  <textarea id="steps" placeholder='Steps (one per line)'></textarea>
+  <br/><br/>
+  <input type="file" id="imageFile" accept="image/*" />
+  <br/><br/>
+  <button type="submit">Add</button>
+</form>
+
+<!-- Edit Modal -->
+<div id="editModal">
+  <div id="editModalContent">
+    <h3>Edit Recipe</h3>
+    <label>Title:</label>
+    <input type="text" id="editTitle">
+    <label>Ingredients (one per line):</label>
+    <textarea id="editIngredients"></textarea>
+    <label>Steps (one per line):</label>
+    <textarea id="editSteps"></textarea>
+    <div style="text-align: right;">
+      <button id="saveEditBtn">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentRecipe = null;
+
+async function fetchRecipes() {
+  const res = await fetch("/api/recipes");
+  const list = await res.json();
+  const container = document.getElementById("recipes");
+  container.innerHTML = "";
+
+  list.forEach(recipe => {
+    const el = document.createElement("div");
+    el.className = "recipe";
+    el.innerHTML = `
+      <h3>${recipe.title}</h3>
+      <div class="small">Created: ${recipe.created_at || 'unknown'}</div>
+      ${recipe.ingredients?.length ? `
+        <h4>Ingredients:</h4>
+        <ul>${recipe.ingredients.map(i => `<li>${i}</li>`).join("")}</ul>
+      ` : ""}
+      <h4>Steps:</h4>
+      <ul>
+        ${recipe.steps.map((s, i) => `
+          <li class="step ${s.done ? 'done' : ''}" data-idx="${i}">
+            <input type="checkbox" ${s.done ? 'checked' : ''}/> ${s.text}
+          </li>`).join("")}
+      </ul>
+      ${recipe.image_url ? `<img src="${recipe.image_url}">` : ""}
+      <input type="file" class="edit-image-file" accept="image/*" />
+      <button class="upload-image-btn">Upload Image</button>
+      <br/>
+      <button class="edit-btn">Edit</button>
+      <button class="delete-btn">Delete</button>
+    `;
+
+    // toggle step done
+    el.querySelectorAll("input[type=checkbox]").forEach(cb => {
+      cb.addEventListener("change", async ev => {
+        const idx = Number(ev.target.closest("li").dataset.idx);
+        recipe.steps[idx].done = ev.target.checked;
+        await fetch(`/api/recipes/${recipe.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ steps: recipe.steps })
+        });
+        fetchRecipes();
+      });
+    });
+
+    // edit button
+    el.querySelector(".edit-btn").addEventListener("click", () => openModal(recipe));
+
+    // delete button
+    el.querySelector(".delete-btn").addEventListener("click", async () => {
+      await fetch(`/api/recipes/${recipe.id}`, { method: "DELETE" });
+      fetchRecipes();
+    });
+
+    // upload image
+    el.querySelector(".upload-image-btn").addEventListener("click", async () => {
+      const fileInput = el.querySelector(".edit-image-file");
+      if (fileInput.files.length === 0) return alert("Select a file first.");
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await uploadRes.json();
+      if (!data.ok) return alert("Upload failed.");
+      await fetch(`/api/recipes/${recipe.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: data.url })
+      });
+      fetchRecipes();
+    });
+
+    container.appendChild(el);
+  });
+}
+
+function openModal(recipe) {
+  currentRecipe = recipe;
+  document.getElementById("editTitle").value = recipe.title;
+  document.getElementById("editIngredients").value = (recipe.ingredients || []).join("\n");
+  document.getElementById("editSteps").value = recipe.steps.map(s => s.text).join("\n");
+  document.getElementById("editModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("editModal").style.display = "none";
+}
+
+document.getElementById("saveEditBtn").addEventListener("click", async () => {
+  if (!currentRecipe) return;
+  const title = document.getElementById("editTitle").value.trim();
+  const ingredients = document.getElementById("editIngredients").value.split("\n").map(s => s.trim()).filter(Boolean);
+  const stepsTexts = document.getElementById("editSteps").value.split("\n").filter(Boolean);
+  const steps = stepsTexts.map((text, i) => ({
+    text,
+    done: currentRecipe.steps[i] ? currentRecipe.steps[i].done : false
+  }));
+  await fetch(`/api/recipes/${currentRecipe.id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, ingredients, steps })
+  });
+  closeModal();
+  fetchRecipes();
+});
+
+// Add new recipe
+document.getElementById("addForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const title = document.getElementById("title").value.trim();
+  const ingredients = document.getElementById("ingredients").value.split("\n").filter(Boolean);
+  const steps = document.getElementById("steps").value.split("\n").map(t => ({ text: t, done: false }));
+  let imageUrl = "";
+  const fileInput = document.getElementById("imageFile");
+  if (fileInput.files.length > 0) {
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+    const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await uploadRes.json();
+    if (data.ok) imageUrl = data.url;
+  }
+  await fetch("/api/recipes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, ingredients, steps, image_url: imageUrl })
+  });
+  document.getElementById("addForm").reset();
+  fetchRecipes();
+});
+
+fetchRecipes();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "d547c0b8-207c-4251-8966-7c356f6303c5",
+    "title": "carrot cake",
+    "ingredients": [
+      "carrot",
+      "milk",
+      "2 eggs"
+    ],
+    "steps": [
+      {
+        "text": "bake it",
+        "done": false
+      },
+      {
+        "text": "eat it",
+        "done": false
+      }
+    ],
+    "image_url": "/uploads/20251112T185318-short-sparklines-example.png",
+    "created_at": "2025-11-12T18:29:20.874195Z"
+  }
+]
