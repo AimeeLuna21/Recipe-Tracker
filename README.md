@@ -155,5 +155,3 @@ Not deployed
 4. python src/app.py
 Open http://127.0.0.1:5000
 
-## Docker
-./run.sh
