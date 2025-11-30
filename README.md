@@ -146,7 +146,7 @@ GitHub Repository:
 https://github.com/AimeeLuna21/Recipe-Tracker.git
 
 Public Deployment (optional):
-Not deployed
+https://recipe-tracker-asl-cebyeyhha2d3cpge.westus3-01.azurewebsites.net/
 
 ## Quickstart (local)
 1. python3 -m venv .venv
