@@ -43,18 +43,22 @@ Data, Models, Services
 | Dependencies | requirements.txt                | Flask, Gunicorn, Pytest                                 |
 
 3) How to Run (Local via Docker)
+
 One-command build & run:
+
 ./run.sh
 
 This script:
-1.Builds the Docker image
-2.Runs the container
-3.Mounts local data/ and uploads/ so recipes persist
+1. Builds the Docker image
+2. Runs the container
+3. Mounts local data/ and uploads/ so recipes persist
 
 Then open in your browser: http://localhost:5000
+
 Health Check: curl http://localhost:5000/api/health
 
 4) Design Decisions
+
 Why Flask?
 - Lightweight and perfect for small REST APIs
 - Easy to integrate with templates and static files
@@ -62,6 +66,7 @@ Why Flask?
 - Simple
 
 Why this Docker Base Image (python:3.11-slim)?
+
 I used the official python:3.11-slim image because it is a lightweight, secure, and fast base for Python applications.
 The “slim” tag removes unnecessary OS libraries, reducing the image from nearly 1 GB (full Python) to around ~120 MB.
 
@@ -109,16 +114,22 @@ Screenshots
 ![Edit Modal](assets/edit_modal.png)
 
 Testing / Validation
+
 Tests written using pytest and Flask’s test_client().
 
-Run tests with: pytest -q
-
+Run tests with: 
+```bash
+pytest -q
+```
 Example test:
+```bash
 def test_health():
+
     client = app.test_client()
     r = client.get("/api/health")
     assert r.status_code == 200
     assert r.get_json()["status"] == "ok"
+```
 All current tests pass.
 
 6) What’s Next
