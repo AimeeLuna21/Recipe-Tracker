@@ -1,23 +1,41 @@
 [
   {
-    "id": "d547c0b8-207c-4251-8966-7c356f6303c5",
-    "title": "carrot cake",
+    "id": "3b62161f-446e-47b8-9ec3-f48dead53266",
+    "title": "Carrot Cake",
     "ingredients": [
-      "carrot",
-      "milk",
-      "2 eggs"
+      "3 Eggs",
+      "2 cups of Milk",
+      "4 shredded carrots",
+      "1 cup of Flour",
+      "3/4 of a tablespoon of Olive Oil"
     ],
     "steps": [
       {
-        "text": "bake it",
+        "text": "Get Ingredients",
         "done": false
       },
       {
-        "text": "eat it",
+        "text": "Preheat oven to 425°F",
+        "done": false
+      },
+      {
+        "text": "Mix the dry ingredients ",
+        "done": false
+      },
+      {
+        "text": "Add the Wet Ingredients",
+        "done": false
+      },
+      {
+        "text": "Place in Pan",
+        "done": false
+      },
+      {
+        "text": "Bake for 30 minutes",
         "done": false
       }
     ],
-    "image_url": "/uploads/20251112T185318-short-sparklines-example.png",
-    "created_at": "2025-11-12T18:29:20.874195Z"
+    "image_url": "/uploads/20251130T061213-carrot.jpg",
+    "created_at": "2025-11-30T06:09:04.050515Z"
   }
 ]

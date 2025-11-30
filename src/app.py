@@ -1,51 +1,67 @@
-import os, json, uuid, datetime
+import os, json, uuid, datetime, logging
 from flask import Flask, jsonify, request, render_template, send_from_directory
-from storage import load_recipes, save_recipes
+from .storage import load_recipes, save_recipes
 from werkzeug.utils import secure_filename
 
+# Logging setup
+logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__, template_folder="templates")
+
+# Config paths from env or defaults
 DATA_PATH = os.environ.get("DATA_PATH", "data")
+UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(os.getcwd(), "uploads"))
+
 RECIPES_FILE = os.path.join(DATA_PATH, "recipes.json")
 
-# Ensure data directory exists
+# Ensure folders exist
 os.makedirs(DATA_PATH, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 if not os.path.exists(RECIPES_FILE):
     save_recipes([], RECIPES_FILE)
 
-# Upload config
-UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
-def allowed_file(filename):
+
+def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route("/")
 def home():
     recipes = load_recipes(RECIPES_FILE)
     return render_template("index.html", recipes=recipes)
 
+
 @app.route("/api/recipes", methods=["GET"])
 def list_recipes():
     return jsonify(load_recipes(RECIPES_FILE)), 200
+
 
 @app.route("/api/recipes", methods=["POST"])
 def create_recipe():
     body = request.json
     if not body or "title" not in body:
         return jsonify({"ok": False, "error": "Missing title"}), 400
+
     recipe = {
         "id": str(uuid.uuid4()),
         "title": body["title"],
         "ingredients": body.get("ingredients", []),
         "steps": body.get("steps", []),
         "image_url": body.get("image_url", ""),
-        "created_at": datetime.datetime.utcnow().isoformat() + "Z"
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
     }
+
     recipes = load_recipes(RECIPES_FILE)
     recipes.append(recipe)
     save_recipes(recipes, RECIPES_FILE)
+
+    logging.info(f"Created recipe {recipe['title']} ({recipe['id']})")
+
     return jsonify({"ok": True, "recipe": recipe}), 201
+
 
 @app.route("/api/recipes/<rid>", methods=["GET"])
 def get_recipe(rid):
@@ -54,6 +70,7 @@ def get_recipe(rid):
         if r["id"] == rid:
             return jsonify(r), 200
     return jsonify({"ok": False, "error": "Not found"}), 404
+
 
 @app.route("/api/recipes/<rid>", methods=["PATCH"])
 def update_recipe(rid):
@@ -71,9 +88,10 @@ def update_recipe(rid):
                 new_steps = []
                 for i, s in enumerate(body["steps"]):
                     done = r["steps"][i]["done"] if i < len(r["steps"]) else False
+                # s can be dict or string
                     new_steps.append({
                         "text": s.get("text", s) if isinstance(s, dict) else str(s),
-                        "done": bool(s.get("done", done)) if isinstance(s, dict) else done
+                        "done": bool(s.get("done", done)) if isinstance(s, dict) else done,
                     })
                 r["steps"] = new_steps
 
@@ -86,9 +104,11 @@ def update_recipe(rid):
                 r["ingredients"] = body["ingredients"]
 
             save_recipes(recipes, RECIPES_FILE)
+            logging.info(f"Updated recipe {rid}")
             return jsonify({"ok": True, "recipe": r}), 200
 
     return jsonify({"ok": False, "error": "Not found"}), 404
+
 
 @app.route("/api/recipes/<rid>", methods=["DELETE"])
 def delete_recipe(rid):
@@ -97,11 +117,14 @@ def delete_recipe(rid):
     if len(new) == len(recipes):
         return jsonify({"ok": False, "error": "Not found"}), 404
     save_recipes(new, RECIPES_FILE)
+    logging.info(f"Deleted recipe {rid}")
     return jsonify({"ok": True}), 200
+
 
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok"}), 200
+
 
 # Image upload routes
 @app.route("/api/upload", methods=["POST"])
@@ -113,15 +136,21 @@ def upload_image():
         return jsonify({"ok": False, "error": "No selected file"}), 400
     if not allowed_file(file.filename):
         return jsonify({"ok": False, "error": "Invalid file type"}), 400
+
     filename = secure_filename(file.filename)
     timestamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")
     saved_name = f"{timestamp}-{filename}"
     file.save(os.path.join(UPLOAD_FOLDER, saved_name))
+
+    logging.info(f"Uploaded image {saved_name}")
+
     return jsonify({"ok": True, "url": f"/uploads/{saved_name}"}), 200
+
 
 @app.route("/uploads/<path:filename>")
 def serve_image(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
