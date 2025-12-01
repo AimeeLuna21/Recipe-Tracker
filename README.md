@@ -33,14 +33,14 @@ Architecture Diagram
 ![Architecture](assets/architecturee.png)
 
 Data, Models, Services
-
-| Component    | Format                          | Purpose                                                 |
-| ------------ | ------------------------------- | ------------------------------------------------------- |
-| Recipes      | JSON file (`data/recipes.json`) | Stores title, ingredients, steps, image URL, timestamps |
-| Images       | PNG/JPG in `/uploads`           | Uploaded user photos                                    |
-| Frontend     | HTML/CSS/JS                     | Renders recipes & handles editing                       |
-| Backend      | Flask API                       | Serves UI, handles CRUD & uploads                       |
-| Dependencies | requirements.txt                | Flask, Gunicorn, Pytest                                 |
+| Component                | Source                                   | Size                                           | Format                                        | License / Notes                                |
+| ------------------------ | ---------------------------------------- | ---------------------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| **Recipe Data**          | Created by user through UI               | ~1–10 KB (JSON) depending on number of recipes | `data/recipes.json` (UTF-8 JSON)              | User-generated content; no external license    |
+| **Images**               | Uploaded by user (camera or file system) | 50 KB – 5 MB each                              | `.png`, `.jpg`, `.jpeg`, `.gif` in `/uploads` | User-owned images; no external assets included |
+| **Frontend UI**          | Written by developer & Chat.GPT                     | ~10 KB                                         | HTML, CSS, JavaScript                         | MIT License (matches repo LICENSE)             |
+| **Backend API**          | Written by developer & Chat.GPT                     | ~20 KB                                         | Python (Flask)                                | MIT License                                    |
+| **Architecture Diagram** | Created by developer                     | ~50–80 KB                                      | PNG stored in `/assets/architecturee.png`     | Student-created; no external license           |
+| **Screenshots**          | Captured by developer                    | 100–300 KB each                                | PNG stored in `/assets/*.png`                 | Ownership: project author                      |
 
 3) How to Run (Local via Docker)
 
