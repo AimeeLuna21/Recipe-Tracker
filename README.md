@@ -30,7 +30,7 @@ Full environment packaged for reproducible execution with one command.
 All key events (create/update/delete/upload) are logged to stdout for observability.
 
 Architecture Diagram
-![Architecture](assets/architecture.png)
+![Architecture](assets/architecturee.png)
 
 Data, Models, Services
 
