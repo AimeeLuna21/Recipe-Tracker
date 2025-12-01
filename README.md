@@ -145,7 +145,7 @@ All current tests pass.
 GitHub Repository:
 https://github.com/AimeeLuna21/Recipe-Tracker.git
 
-Public Deployment (optional):
+Public Deployment:
 https://recipe-tracker-asl-cebyeyhha2d3cpge.westus3-01.azurewebsites.net/
 
 ## Quickstart (local)
